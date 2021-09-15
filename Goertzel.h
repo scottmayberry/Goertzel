@@ -31,21 +31,25 @@ public:
   Goertzel(float, float);
   Goertzel(float, float, int);
   Goertzel();
-  void Init(float, float, int);
-  void Init(float, float);
+  void reinit(float, float, int);
+  void reinit(float, float);
 
   float detect(byte[], int);
   float detect();
-  void addSample(byte);
-  bool addSampleWithCheck(byte, int);
+  void addSample(int);
+  bool addSampleWithCheck(int, int);
   float detectWithN(int);
   int getSampleIndex();
+
+  float getSampleFreq();
+  float getTargetFreq();
 
   float calcMagnitudeSquared();
   float calcPurity(float, int);
 
   // library-accessible "private" interface
 private:
+  void initialize(float, float, int);
   void GetRealImag(float *, float *);
   void ProcessSample(byte);
   void ResetGoertzel();

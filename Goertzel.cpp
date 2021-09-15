@@ -23,7 +23,21 @@
 
 Goertzel::Goertzel(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY, int in_ADCCENTER)
 {
+  initialize(in_TARGET_FREQUENCY, in_SAMPLING_FREQUENCY, in_ADCCENTER);
+}
 
+Goertzel::Goertzel(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY)
+{
+  initialize(in_TARGET_FREQUENCY, in_SAMPLING_FREQUENCY, 128);
+}
+
+Goertzel::Goertzel()
+{
+  initialize(24000, 240000, 128);
+}
+
+void Goertzel::initialize(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY, int in_ADCCENTER)
+{
   SAMPLING_FREQUENCY = in_SAMPLING_FREQUENCY; //on 16mhz, ~8928.57142857143, on 8mhz ~44444
   TARGET_FREQUENCY = in_TARGET_FREQUENCY;     //should be integer of SAMPLING_RATE/N
   ADCCENTER = in_ADCCENTER;
@@ -36,24 +50,24 @@ Goertzel::Goertzel(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY, int i
   ResetGoertzel();
 }
 
-Goertzel::Goertzel(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY)
+void Goertzel::reinit(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY)
 {
-  Goertzel(in_TARGET_FREQUENCY, in_SAMPLING_FREQUENCY, 128);
+  initialize(in_TARGET_FREQUENCY, in_SAMPLING_FREQUENCY, 128);
 }
 
-Goertzel::Goertzel()
+void Goertzel::reinit(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY, int in_ADCCENTER)
 {
-  ;
+  initialize(in_TARGET_FREQUENCY, in_SAMPLING_FREQUENCY, in_ADCCENTER);
 }
 
-void Goertzel::Init(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY, int in_ADCCENTER)
+float Goertzel::getSampleFreq()
 {
-  Goertzel(in_TARGET_FREQUENCY, in_SAMPLING_FREQUENCY, in_ADCCENTER);
+  return SAMPLING_FREQUENCY;
 }
 
-void Goertzel::Init(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY)
+float Goertzel::getTargetFreq()
 {
-  Goertzel(in_TARGET_FREQUENCY, in_SAMPLING_FREQUENCY, 128);
+  return TARGET_FREQUENCY;
 }
 
 /* Call this routine before every "block" (size=N) of samples. */
@@ -64,6 +78,11 @@ void Goertzel::ResetGoertzel()
   sumOfSquares = 0;
   readIndex = 0;
 }
+
+// float Goertzel::applyHammingWindow(int sample)
+// {
+//   return 0.54 - 0.46 * cos(2 * PI * sample / readIndex);
+// }
 
 /* Call this routine for every sample. */
 void Goertzel::ProcessSample(byte sample)
@@ -79,7 +98,7 @@ int Goertzel::getSampleIndex()
   return readIndex;
 }
 
-bool Goertzel::addSampleWithCheck(byte sample, int n)
+bool Goertzel::addSampleWithCheck(int sample, int n)
 {
   if (readIndex < n)
   {
@@ -91,7 +110,7 @@ bool Goertzel::addSampleWithCheck(byte sample, int n)
   return false;
 }
 
-void Goertzel::addSample(byte sample)
+void Goertzel::addSample(int sample)
 {
   sumOfSquares += (sample - ADCCENTER) * (sample - ADCCENTER);
   ProcessSample(sample);
