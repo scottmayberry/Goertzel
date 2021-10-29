@@ -34,7 +34,7 @@ public:
   void reinit(float, float, int);
   void reinit(float, float);
 
-  float detect(byte[], int);
+  float detectBatch(byte[], int);
   float detect();
   void addSample(int);
   bool addSampleWithCheck(int, int);
@@ -47,14 +47,26 @@ public:
   float calcMagnitudeSquared();
   float calcPurity(float, int);
 
+  float applyHammingWindow(float);
+  float applyExactBlackman(float);
+
+  void setN(int);
+
+  void setHamming(bool);
+  void setExactBlackman(bool);
+
   // library-accessible "private" interface
 private:
   void initialize(float, float, int);
   void GetRealImag(float *, float *);
-  void ProcessSample(byte);
+  void ProcessSample(int);
+  void ProcessSample(float);
   void ResetGoertzel();
   int getSumOfSquares(byte[], int);
 
+  bool hamming = false;
+  bool exactBlackman = false;
+  int N;
   float SAMPLING_FREQUENCY;
   float TARGET_FREQUENCY;
   int readIndex;

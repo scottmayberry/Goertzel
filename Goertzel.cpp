@@ -41,6 +41,7 @@ void Goertzel::initialize(float in_TARGET_FREQUENCY, float in_SAMPLING_FREQUENCY
   SAMPLING_FREQUENCY = in_SAMPLING_FREQUENCY; //on 16mhz, ~8928.57142857143, on 8mhz ~44444
   TARGET_FREQUENCY = in_TARGET_FREQUENCY;     //should be integer of SAMPLING_RATE/N
   ADCCENTER = in_ADCCENTER;
+  N = 0;
 
   float omega = (2.0 * PI * TARGET_FREQUENCY) / SAMPLING_FREQUENCY;
 
@@ -79,18 +80,28 @@ void Goertzel::ResetGoertzel()
   readIndex = 0;
 }
 
-// float Goertzel::applyHammingWindow(int sample)
-// {
-//   return 0.54 - 0.46 * cos(2 * PI * sample / readIndex);
-// }
+float Goertzel::applyHammingWindow(float sample)
+{
+  return 0.54 - 0.46 * cos(2 * PI * sample / N);
+}
+
+float Goertzel::applyExactBlackman(float sample)
+{
+  return 0.426591 - .496561 * cos(2 * PI * sample / N) + .076848 * cos(4 * PI * sample / N);
+}
 
 /* Call this routine for every sample. */
-void Goertzel::ProcessSample(byte sample)
+void Goertzel::ProcessSample(float zero_centered_sample)
 {
   float Q0;
-  Q0 = coeff * Q1 - Q2 + (sample - ADCCENTER);
+  Q0 = coeff * Q1 - Q2 + zero_centered_sample;
   Q2 = Q1;
   Q1 = Q0;
+}
+
+void Goertzel::ProcessSample(int zero_centered_sample)
+{
+  ProcessSample(float(zero_centered_sample));
 }
 
 int Goertzel::getSampleIndex()
@@ -98,30 +109,53 @@ int Goertzel::getSampleIndex()
   return readIndex;
 }
 
-bool Goertzel::addSampleWithCheck(int sample, int n)
+bool Goertzel::addSampleWithCheck(int sample, int maxN)
 {
-  if (readIndex < n)
+  if (readIndex < maxN)
   {
-    sumOfSquares += (sample - ADCCENTER) * (sample - ADCCENTER);
-    ProcessSample(sample);
-    readIndex++;
+    addSample(sample);
     return true;
   }
   return false;
 }
 
+void Goertzel::setN(int n)
+{
+  N = n;
+}
+
 void Goertzel::addSample(int sample)
 {
-  sumOfSquares += (sample - ADCCENTER) * (sample - ADCCENTER);
+  sample = sample - ADCCENTER;
+  float adjustedSample;
+  if ((hamming || exactBlackman) && N != 0)
+  {
+    if (hamming)
+    {
+      adjustedSample = sample * applyHammingWindow(sample);
+    }
+    else
+    {
+      adjustedSample = sample * applyExactBlackman(sample);
+    }
+  }
+  else
+  {
+    adjustedSample = sample;
+  }
+  sumOfSquares += sample * sample;
   ProcessSample(sample);
   readIndex++;
 }
 
-float Goertzel::detectWithN(int n)
+void Goertzel::setHamming(bool hamm)
 {
-  float purity = calcPurity(calcMagnitudeSquared(), n);
-  ResetGoertzel();
-  return purity;
+  hamming = hamm;
+}
+
+void Goertzel::setExactBlackman(bool eb)
+{
+  exactBlackman = eb;
 }
 
 float Goertzel::calcMagnitudeSquared()
@@ -141,27 +175,15 @@ float Goertzel::detect()
   return purity;
 }
 
-int Goertzel::getSumOfSquares(byte samples[], int n)
-{
-  int sumOfSquaresTemp = 0;
-  for (int i = 0; i < n; i++)
-  {
-    sumOfSquaresTemp += (samples[i] - ADCCENTER) * (samples[i] - ADCCENTER);
-  }
-  return sumOfSquaresTemp;
-}
-
-float Goertzel::detect(byte samples[], int n)
+float Goertzel::detectBatch(byte samples[], int n)
 {
   ResetGoertzel();
   testData = samples;
 
-  sumOfSquares = getSumOfSquares(samples, n);
-
   /* Process the samples. */
   for (int index = 0; index < n; index++)
   {
-    ProcessSample(testData[index]);
+    addSample(testData[index]);
   }
 
   float purity = calcPurity(calcMagnitudeSquared(), n);
