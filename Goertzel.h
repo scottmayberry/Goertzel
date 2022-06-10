@@ -48,11 +48,11 @@ public:
 
   void setHamming(bool);
   void setExactBlackman(bool);
+  void ResetGoertzel();
 
   // library-accessible "private" interface
 private:
   void initialize(float, float, int);
-  void ResetGoertzel();
 
   float calcMagnitudeSquared();
   float calcPurity();
