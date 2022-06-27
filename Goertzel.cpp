@@ -133,7 +133,6 @@ float Goertzel::calcImagPart()
 float Goertzel::detectWithDifferentN(int numberOfSamples)
 {
   float purity = calcPurityWithDifferentN(numberOfSamples);
-  ResetGoertzel();
   return purity;
 }
 
@@ -143,6 +142,18 @@ float Goertzel::detect()
   ResetGoertzel();
   return purity;
 }
+
+// float Goertzel::detectBatchDoNotReset(float samples[], int sizeOfSamples, int startIndex)
+// {
+//   ResetGoertzel();
+//   for (int index = 0; index < sizeOfSamples; index++)
+//   {
+//     addSample(samples[(index + startIndex) % sizeOfSamples]);
+//   }
+
+//   float purity = detectWithDifferentN(sizeOfSamples);
+//   return purity;
+// }
 
 float Goertzel::detectBatch(float samples[], int sizeOfSamples, int startIndex)
 {
@@ -156,6 +167,7 @@ float Goertzel::detectBatch(float samples[], int sizeOfSamples, int startIndex)
   }
 
   float purity = detectWithDifferentN(sizeOfSamples);
+  // ResetGoertzel();
   // Serial.println(microsfour - micros());
   return purity;
 }
